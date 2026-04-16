@@ -6,6 +6,7 @@ export type BookStatus = 'pending' | 'confirmed' | 'in_progress' | 'completed' |
 interface BookAttributes {
   id: string;
   name: string;
+  email: string | null;
   phone: string;
   havePet: boolean;
   childSeat: boolean;
@@ -20,7 +21,7 @@ interface BookAttributes {
   notes: string | null;
 }
 
-export interface BookCreationAttributes extends Optional<BookAttributes, 'id' | 'status' | 'notes' | 'passengerCount' | 'luggage' | 'price' | 'carSize'> {}
+export interface BookCreationAttributes extends Optional<BookAttributes, 'id' | 'email' | 'status' | 'notes' | 'passengerCount' | 'luggage' | 'price' | 'carSize'> {}
 
 export class Book
   extends Model<BookAttributes, BookCreationAttributes>
@@ -28,6 +29,7 @@ export class Book
 {
   declare id: string;
   declare name: string;
+  declare email: string | null;
   declare phone: string;
   declare havePet: boolean;
   declare childSeat: boolean;
@@ -55,6 +57,11 @@ Book.init(
     name: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    email: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: null,
     },
     phone: {
       type: DataTypes.STRING(20),

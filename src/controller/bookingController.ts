@@ -4,7 +4,7 @@ import { Book, BookCreationAttributes, BookStatus } from '../model/Book';
 // POST /api/bookings  (public)
 export const createBooking = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, phone, havePet, childSeat, from, to, when, carSize, passengerCount, luggage, price, notes } = req.body;
+    const { name, email, phone, havePet, childSeat, from, to, when, carSize, passengerCount, luggage, price, notes } = req.body;
 
     if (!name || !phone || !from || !to || !when) {
       res.status(400).json({ success: false, message: 'name, phone, from, to, when заавал шаардлагатай' });
@@ -13,6 +13,7 @@ export const createBooking = async (req: Request, res: Response, next: NextFunct
 
     const booking = await Book.create({
       name,
+      email: email ?? null,
       phone,
       havePet: havePet ?? false,
       childSeat: childSeat ?? false,
