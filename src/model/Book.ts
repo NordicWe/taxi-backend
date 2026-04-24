@@ -15,13 +15,12 @@ interface BookAttributes {
   when: string;
   carSize: string | null;
   passengerCount: number;
-  luggage: number;
   price: number;
   status: BookStatus;
   notes: string | null;
 }
 
-export interface BookCreationAttributes extends Optional<BookAttributes, 'id' | 'email' | 'status' | 'notes' | 'passengerCount' | 'luggage' | 'price' | 'carSize'> {}
+export interface BookCreationAttributes extends Optional<BookAttributes, 'id' | 'email' | 'status' | 'notes' | 'passengerCount' | 'price' | 'carSize'> {}
 
 export class Book
   extends Model<BookAttributes, BookCreationAttributes>
@@ -38,7 +37,6 @@ export class Book
   declare when: string;
   declare carSize: string | null;
   declare passengerCount: number;
-  declare luggage: number;
   declare price: number;
   declare status: BookStatus;
   declare notes: string | null;
@@ -98,11 +96,6 @@ Book.init(
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 1,
-    },
-    luggage: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
     },
     price: {
       type: DataTypes.FLOAT,
