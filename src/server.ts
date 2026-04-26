@@ -16,8 +16,9 @@ import { notFound, errorHandler } from './middleware/errorHandler';
 
 const app = express();
 const isProd = process.env.NODE_ENV === 'production';
+const isVercel = !!process.env.VERCEL; // Vercel-д энэ var автоматаар "1"
 
-// Security headers (API server — cross-origin resource policy нээлттэй байна)
+// Security
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
 // CORS
@@ -35,7 +36,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
+  windowMs: 15 * 60 * 1000,
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
@@ -53,29 +54,35 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/users', userRoutes);
 
-// 404 & error handling
+// 404 & error
 app.use(notFound);
 app.use(errorHandler);
 
-// DB connect + server start
-(async () => {
-  try {
-    await sequelize.authenticate();
+// ───────────────────────────────────────────────────────────────────
+// DB initialize — cold start болгонд нэг удаа хийгдэнэ
+// ───────────────────────────────────────────────────────────────────
+const dbReady = sequelize
+  .authenticate()
+  .then(async () => {
     console.log('✅ DB connected');
-
-    if (!isProd) {
+    // Vercel/production-д auto-sync хийхгүй (schema чухал)
+    if (!isProd && !isVercel) {
       await sequelize.sync({ alter: true });
       console.log('✅ DB synced (dev)');
-    } else {
-      await sequelize.sync({ force: false });
-      console.log('✅ DB sync (prod)');
     }
+  })
+  .catch((err) => {
+    console.error('❌ Database connection error:', err);
+  });
 
+// Vercel-д энэ блок ажиллахгүй (Vercel өөрөө handle хийнэ).
+// Локал дээр л listen-ыг эхлүүлнэ.
+if (!isVercel) {
+  dbReady.then(() => {
     app.listen(config.PORT, () => {
       console.log(`🚀 Server running on port ${config.PORT}`);
     });
-  } catch (err) {
-    console.error('❌ Database connection error:', err);
-    process.exit(1);
-  }
-})();
+  });
+}
+
+export default app;
