@@ -1,5 +1,6 @@
 import { Sequelize } from "sequelize";
 import { config } from "./index";
+import pg from 'pg';
 
 const { DATABASE_URL, DB_HOST, DB_PORT, DB_NAME, DB_PASSWORD, DB_USER } = config;
 
@@ -8,6 +9,7 @@ const { DATABASE_URL, DB_HOST, DB_PORT, DB_NAME, DB_PASSWORD, DB_USER } = config
 const sequelize = DATABASE_URL
   ? new Sequelize(DATABASE_URL, {
       dialect: "postgres",
+      dialectModule: pg,
       logging: false,
       dialectOptions: {
         ssl: {
@@ -24,6 +26,7 @@ const sequelize = DATABASE_URL
     })
   : new Sequelize({
       dialect: "postgres",
+      dialectModule: pg,
       database: DB_NAME,
       username: DB_USER,
       password: DB_PASSWORD,
