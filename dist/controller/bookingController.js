@@ -5,7 +5,7 @@ const Book_1 = require("../model/Book");
 // POST /api/bookings  (public)
 const createBooking = async (req, res, next) => {
     try {
-        const { name, email, phone, havePet, childSeat, from, to, when, carSize, passengerCount, luggage, price, notes } = req.body;
+        const { name, email, phone, havePet, childSeat, from, to, when, carSize, passengerCount, price, notes } = req.body;
         if (!name || !phone || !from || !to || !when) {
             res.status(400).json({ success: false, message: 'name, phone, from, to, when заавал шаардлагатай' });
             return;
@@ -21,7 +21,6 @@ const createBooking = async (req, res, next) => {
             when,
             carSize: carSize ?? null,
             passengerCount: passengerCount ?? 1,
-            luggage: luggage ?? 0,
             price: price ?? 0,
             notes: notes ?? null,
         });
@@ -82,7 +81,7 @@ const updateBooking = async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Захиалга олдсонгүй' });
             return;
         }
-        const { name, phone, havePet, childSeat, from, to, when, carSize, passengerCount, luggage, price, notes } = req.body;
+        const { name, phone, havePet, childSeat, from, to, when, carSize, passengerCount, price, notes } = req.body;
         await booking.update({
             ...(name !== undefined && { name }),
             ...(phone !== undefined && { phone }),
@@ -93,7 +92,6 @@ const updateBooking = async (req, res, next) => {
             ...(when !== undefined && { when }),
             ...(carSize !== undefined && { carSize }),
             ...(passengerCount !== undefined && { passengerCount }),
-            ...(luggage !== undefined && { luggage }),
             ...(price !== undefined && { price }),
             ...(notes !== undefined && { notes }),
         });

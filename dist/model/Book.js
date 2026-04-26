@@ -61,11 +61,6 @@ Book.init({
         allowNull: false,
         defaultValue: 1,
     },
-    luggage: {
-        type: sequelize_1.DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0,
-    },
     price: {
         type: sequelize_1.DataTypes.FLOAT,
         allowNull: false,
