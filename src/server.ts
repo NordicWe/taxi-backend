@@ -8,6 +8,7 @@ import { config } from './config';
 // Models
 import './model/User';
 import './model/Book';
+import { AdminCredential } from './model/AdminCredential';
 
 import bookingRoutes from './routes/bookingRoutes';
 import userRoutes from './routes/userRoutes';
@@ -65,6 +66,13 @@ const dbReady = sequelize
   .authenticate()
   .then(async () => {
     console.log('✅ DB connected');
+    // Ensure admin_credential table exists everywhere (no-op if already present)
+    try {
+      await AdminCredential.sync();
+      console.log('✅ admin_credential table ready');
+    } catch (e) {
+      console.error('⚠️ admin_credential sync failed:', e);
+    }
     // Vercel/production-д auto-sync хийхгүй (schema чухал)
     if (!isProd && !isVercel) {
       await sequelize.sync({ alter: true });
