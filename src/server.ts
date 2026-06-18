@@ -38,7 +38,9 @@ app.use(express.urlencoded({ extended: true }));
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  // Admin dashboard ~5 сек тутамд polling хийдэг тул толгой хязгаарыг өндөр барина.
+  // Нийтийн захиалга үүсгэх endpoint нь bookingRoutes дотор тусдаа чанга limiter-тэй.
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Хэт олон хүсэлт. 15 минутын дараа дахин оролдоно уу' },
