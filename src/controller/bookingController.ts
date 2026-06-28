@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Book, BookCreationAttributes, BookStatus } from '../model/Book';
+import { sendBookingConfirmation } from '../utils/mailer';
 
 // POST /api/bookings  (public)
 export const createBooking = async (req: Request, res: Response, next: NextFunction) => {
@@ -123,8 +124,17 @@ export const updateBookingStatus = async (req: Request, res: Response, next: Nex
       return;
     }
 
+    const wasConfirmed = booking.status === 'confirmed';
     await booking.update({ status });
     res.json({ success: true, data: booking });
+
+    // 'confirmed' болж шинээр өөрчлөгдсөн үед захиалагч руу баталгаажуулах мэйл явуулах
+    // (хариу буцаасны дараа — мэйл амжилтгүй болсон ч API унахгүй)
+    if (status === 'confirmed' && !wasConfirmed && booking.email) {
+      sendBookingConfirmation(booking).catch(err =>
+        console.error('[bookingController] Баталгаажуулах мэйл амжилтгүй:', err),
+      );
+    }
   } catch (err) {
     next(err);
   }

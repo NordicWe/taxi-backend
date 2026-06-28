@@ -18,4 +18,9 @@ exports.config = {
     JWT_SECRET: process.env.JWT_SECRET || 'nordic_taxi_jwt_secret_2026',
     ADMIN_USERNAME: process.env.ADMIN_USERNAME || 'admin',
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'taxi2024',
+    // Brevo мэйл мэдэгдэл
+    BREVO_API_KEY: process.env.BREVO_API_KEY,
+    NOTIFY_EMAIL: process.env.NOTIFY_EMAIL,
+    MAIL_FROM_EMAIL: process.env.MAIL_FROM_EMAIL,
+    MAIL_FROM_NAME: process.env.MAIL_FROM_NAME || 'Nordic Uppsala Taxi',
 };

@@ -12,6 +12,7 @@ const config_1 = require("./config");
 // Models
 require("./model/User");
 require("./model/Book");
+const AdminCredential_1 = require("./model/AdminCredential");
 const bookingRoutes_1 = __importDefault(require("./routes/bookingRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const adminRoutes_1 = __importDefault(require("./routes/adminRoutes"));
@@ -33,7 +34,9 @@ app.use(express_1.default.urlencoded({ extended: true }));
 // Rate limiting
 const limiter = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
-    max: 200,
+    // Admin dashboard ~5 сек тутамд polling хийдэг тул толгой хязгаарыг өндөр барина.
+    // Нийтийн захиалга үүсгэх endpoint нь bookingRoutes дотор тусдаа чанга limiter-тэй.
+    max: 1000,
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, message: 'Хэт олон хүсэлт. 15 минутын дараа дахин оролдоно уу' },
@@ -57,6 +60,14 @@ const dbReady = db_1.default
     .authenticate()
     .then(async () => {
     console.log('✅ DB connected');
+    // Ensure admin_credential table exists everywhere (no-op if already present)
+    try {
+        await AdminCredential_1.AdminCredential.sync();
+        console.log('✅ admin_credential table ready');
+    }
+    catch (e) {
+        console.error('⚠️ admin_credential sync failed:', e);
+    }
     // Vercel/production-д auto-sync хийхгүй (schema чухал)
     if (!isProd && !isVercel) {
         await db_1.default.sync({ alter: true });

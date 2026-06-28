@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getBookingStats = exports.deleteBooking = exports.updateBookingStatus = exports.updateBooking = exports.getBookingById = exports.getAllBookings = exports.createBooking = void 0;
 const Book_1 = require("../model/Book");
+const mailer_1 = require("../utils/mailer");
 // POST /api/bookings  (public)
 const createBooking = async (req, res, next) => {
     try {
@@ -116,8 +117,14 @@ const updateBookingStatus = async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Захиалга олдсонгүй' });
             return;
         }
+        const wasConfirmed = booking.status === 'confirmed';
         await booking.update({ status });
         res.json({ success: true, data: booking });
+        // 'confirmed' болж шинээр өөрчлөгдсөн үед захиалагч руу баталгаажуулах мэйл явуулах
+        // (хариу буцаасны дараа — мэйл амжилтгүй болсон ч API унахгүй)
+        if (status === 'confirmed' && !wasConfirmed && booking.email) {
+            (0, mailer_1.sendBookingConfirmation)(booking).catch(err => console.error('[bookingController] Баталгаажуулах мэйл амжилтгүй:', err));
+        }
     }
     catch (err) {
         next(err);
