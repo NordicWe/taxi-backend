@@ -26,6 +26,9 @@ const createBooking = async (req, res, next) => {
             notes: notes ?? null,
         });
         res.status(201).json({ success: true, data: booking });
+        // Admin (NOTIFY_EMAIL) руу "шинэ захиалга ирлээ" мэдэгдэл явуулах
+        // (хариу буцаасны дараа — мэйл амжилтгүй болсон ч захиалга үүсэхэд нөлөөлөхгүй)
+        (0, mailer_1.sendNewBookingNotification)(booking).catch(err => console.error('[bookingController] Шинэ захиалгын мэдэгдэл амжилтгүй:', err));
     }
     catch (err) {
         next(err);

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { Book, BookCreationAttributes, BookStatus } from '../model/Book';
-import { sendBookingConfirmation } from '../utils/mailer';
+import { sendBookingConfirmation, sendNewBookingNotification } from '../utils/mailer';
 
 // POST /api/bookings  (public)
 export const createBooking = async (req: Request, res: Response, next: NextFunction) => {
@@ -28,6 +28,12 @@ export const createBooking = async (req: Request, res: Response, next: NextFunct
     } as BookCreationAttributes);
 
     res.status(201).json({ success: true, data: booking });
+
+    // Admin (NOTIFY_EMAIL) руу "шинэ захиалга ирлээ" мэдэгдэл явуулах
+    // (хариу буцаасны дараа — мэйл амжилтгүй болсон ч захиалга үүсэхэд нөлөөлөхгүй)
+    sendNewBookingNotification(booking).catch(err =>
+      console.error('[bookingController] Шинэ захиалгын мэдэгдэл амжилтгүй:', err),
+    );
   } catch (err) {
     next(err);
   }
