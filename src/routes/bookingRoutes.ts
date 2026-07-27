@@ -8,6 +8,7 @@ import {
   updateBookingStatus,
   deleteBooking,
   getBookingStats,
+  sendConfirmationEmail,
 } from '../controller/bookingController';
 import { requireAdmin } from '../middleware/auth';
 
@@ -31,6 +32,7 @@ router.get('/', requireAdmin, getAllBookings);
 router.get('/:id', requireAdmin, getBookingById);
 router.put('/:id', requireAdmin, updateBooking);
 router.patch('/:id/status', requireAdmin, updateBookingStatus);
+router.post('/:id/send-confirmation', requireAdmin, sendConfirmationEmail);
 router.delete('/:id', requireAdmin, deleteBooking);
 
 export default router;

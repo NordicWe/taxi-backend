@@ -24,5 +24,6 @@ router.get('/', auth_1.requireAdmin, bookingController_1.getAllBookings);
 router.get('/:id', auth_1.requireAdmin, bookingController_1.getBookingById);
 router.put('/:id', auth_1.requireAdmin, bookingController_1.updateBooking);
 router.patch('/:id/status', auth_1.requireAdmin, bookingController_1.updateBookingStatus);
+router.post('/:id/send-confirmation', auth_1.requireAdmin, bookingController_1.sendConfirmationEmail);
 router.delete('/:id', auth_1.requireAdmin, bookingController_1.deleteBooking);
 exports.default = router;

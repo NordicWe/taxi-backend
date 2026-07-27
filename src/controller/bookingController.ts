@@ -27,13 +27,16 @@ export const createBooking = async (req: Request, res: Response, next: NextFunct
       notes: notes ?? null,
     } as BookCreationAttributes);
 
-    res.status(201).json({ success: true, data: booking });
+    // Admin (NOTIFY_EMAIL) руу "шинэ захиалга ирлээ" мэдэгдэл явуулах.
+    // Serverless (Vercel) дээр хариу буцаасны дараах async ажил таслагддаг тул
+    // хариунаас ӨМНӨ await хийж найдвартай илгээнэ. Мэйл алдаа гарсан ч захиалга үүснэ.
+    try {
+      await sendNewBookingNotification(booking);
+    } catch (err) {
+      console.error('[bookingController] Шинэ захиалгын мэдэгдэл амжилтгүй:', err);
+    }
 
-    // Admin (NOTIFY_EMAIL) руу "шинэ захиалга ирлээ" мэдэгдэл явуулах
-    // (хариу буцаасны дараа — мэйл амжилтгүй болсон ч захиалга үүсэхэд нөлөөлөхгүй)
-    sendNewBookingNotification(booking).catch(err =>
-      console.error('[bookingController] Шинэ захиалгын мэдэгдэл амжилтгүй:', err),
-    );
+    res.status(201).json({ success: true, data: booking });
   } catch (err) {
     next(err);
   }
@@ -130,17 +133,37 @@ export const updateBookingStatus = async (req: Request, res: Response, next: Nex
       return;
     }
 
-    const wasConfirmed = booking.status === 'confirmed';
     await booking.update({ status });
     res.json({ success: true, data: booking });
+    // Тэмдэглэл: confirmed болоход мэйл автоматаар илгээхгүй.
+    // Баталгаажуулах мэйлийг admin гараар "Send confirmation email" товчоор илгээнэ
+    // (sendConfirmationEmail controller).
+  } catch (err) {
+    next(err);
+  }
+};
 
-    // 'confirmed' болж шинээр өөрчлөгдсөн үед захиалагч руу баталгаажуулах мэйл явуулах
-    // (хариу буцаасны дараа — мэйл амжилтгүй болсон ч API унахгүй)
-    if (status === 'confirmed' && !wasConfirmed && booking.email) {
-      sendBookingConfirmation(booking).catch(err =>
-        console.error('[bookingController] Баталгаажуулах мэйл амжилтгүй:', err),
-      );
+// POST /api/bookings/:id/send-confirmation  (admin)
+// Статусаас үл хамааран захиалагч руу баталгаажуулах мэйлийг ГАРААР илгээх
+export const sendConfirmationEmail = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const booking = await Book.findByPk(req.params.id as string);
+    if (!booking) {
+      res.status(404).json({ success: false, message: 'Захиалга олдсонгүй' });
+      return;
     }
+    if (!booking.email) {
+      res.status(400).json({ success: false, message: 'Энэ захиалгад имэйл хаяг байхгүй' });
+      return;
+    }
+
+    const ok = await sendBookingConfirmation(booking);
+    if (!ok) {
+      res.status(502).json({ success: false, message: 'Мэйл илгээхэд алдаа гарлаа' });
+      return;
+    }
+
+    res.json({ success: true, message: 'Мэйл илгээгдлээ' });
   } catch (err) {
     next(err);
   }

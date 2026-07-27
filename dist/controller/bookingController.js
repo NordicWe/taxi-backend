@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getBookingStats = exports.deleteBooking = exports.updateBookingStatus = exports.updateBooking = exports.getBookingById = exports.getAllBookings = exports.createBooking = void 0;
+exports.getBookingStats = exports.deleteBooking = exports.sendConfirmationEmail = exports.updateBookingStatus = exports.updateBooking = exports.getBookingById = exports.getAllBookings = exports.createBooking = void 0;
 const Book_1 = require("../model/Book");
 const mailer_1 = require("../utils/mailer");
 // POST /api/bookings  (public)
@@ -25,10 +25,16 @@ const createBooking = async (req, res, next) => {
             price: price ?? 0,
             notes: notes ?? null,
         });
+        // Admin (NOTIFY_EMAIL) руу "шинэ захиалга ирлээ" мэдэгдэл явуулах.
+        // Serverless (Vercel) дээр хариу буцаасны дараах async ажил таслагддаг тул
+        // хариунаас ӨМНӨ await хийж найдвартай илгээнэ. Мэйл алдаа гарсан ч захиалга үүснэ.
+        try {
+            await (0, mailer_1.sendNewBookingNotification)(booking);
+        }
+        catch (err) {
+            console.error('[bookingController] Шинэ захиалгын мэдэгдэл амжилтгүй:', err);
+        }
         res.status(201).json({ success: true, data: booking });
-        // Admin (NOTIFY_EMAIL) руу "шинэ захиалга ирлээ" мэдэгдэл явуулах
-        // (хариу буцаасны дараа — мэйл амжилтгүй болсон ч захиалга үүсэхэд нөлөөлөхгүй)
-        (0, mailer_1.sendNewBookingNotification)(booking).catch(err => console.error('[bookingController] Шинэ захиалгын мэдэгдэл амжилтгүй:', err));
     }
     catch (err) {
         next(err);
@@ -120,20 +126,42 @@ const updateBookingStatus = async (req, res, next) => {
             res.status(404).json({ success: false, message: 'Захиалга олдсонгүй' });
             return;
         }
-        const wasConfirmed = booking.status === 'confirmed';
         await booking.update({ status });
         res.json({ success: true, data: booking });
-        // 'confirmed' болж шинээр өөрчлөгдсөн үед захиалагч руу баталгаажуулах мэйл явуулах
-        // (хариу буцаасны дараа — мэйл амжилтгүй болсон ч API унахгүй)
-        if (status === 'confirmed' && !wasConfirmed && booking.email) {
-            (0, mailer_1.sendBookingConfirmation)(booking).catch(err => console.error('[bookingController] Баталгаажуулах мэйл амжилтгүй:', err));
-        }
+        // Тэмдэглэл: confirmed болоход мэйл автоматаар илгээхгүй.
+        // Баталгаажуулах мэйлийг admin гараар "Send confirmation email" товчоор илгээнэ
+        // (sendConfirmationEmail controller).
     }
     catch (err) {
         next(err);
     }
 };
 exports.updateBookingStatus = updateBookingStatus;
+// POST /api/bookings/:id/send-confirmation  (admin)
+// Статусаас үл хамааран захиалагч руу баталгаажуулах мэйлийг ГАРААР илгээх
+const sendConfirmationEmail = async (req, res, next) => {
+    try {
+        const booking = await Book_1.Book.findByPk(req.params.id);
+        if (!booking) {
+            res.status(404).json({ success: false, message: 'Захиалга олдсонгүй' });
+            return;
+        }
+        if (!booking.email) {
+            res.status(400).json({ success: false, message: 'Энэ захиалгад имэйл хаяг байхгүй' });
+            return;
+        }
+        const ok = await (0, mailer_1.sendBookingConfirmation)(booking);
+        if (!ok) {
+            res.status(502).json({ success: false, message: 'Мэйл илгээхэд алдаа гарлаа' });
+            return;
+        }
+        res.json({ success: true, message: 'Мэйл илгээгдлээ' });
+    }
+    catch (err) {
+        next(err);
+    }
+};
+exports.sendConfirmationEmail = sendConfirmationEmail;
 // DELETE /api/bookings/:id  (admin)
 const deleteBooking = async (req, res, next) => {
     try {
