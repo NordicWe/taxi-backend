@@ -20,6 +20,20 @@ const errorHandler_1 = require("./middleware/errorHandler");
 const app = (0, express_1.default)();
 const isProd = process.env.NODE_ENV === 'production';
 const isVercel = !!process.env.VERCEL; // Vercel-д энэ var автоматаар "1"
+// Vercel rewrite (vercel.json: /(.*) → /api/index?__path=$1) нь req.url-ыг
+// /api/index болгодог тул анхны замыг __path-аас сэргээнэ. Бусад үед no-op.
+app.use((req, _res, next) => {
+    if (req.url.startsWith('/api/index')) {
+        const u = new URL(req.url, 'http://localhost');
+        const original = u.searchParams.get('__path');
+        if (original !== null) {
+            u.searchParams.delete('__path');
+            const qs = u.searchParams.toString();
+            req.url = '/' + original.replace(/^\/+/, '') + (qs ? `?${qs}` : '');
+        }
+    }
+    next();
+});
 // Security
 app.use((0, helmet_1.default)({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 // CORS
