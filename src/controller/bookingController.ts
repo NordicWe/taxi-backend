@@ -133,11 +133,23 @@ export const updateBookingStatus = async (req: Request, res: Response, next: Nex
       return;
     }
 
+    const wasConfirmed = booking.status === 'confirmed';
     await booking.update({ status });
-    res.json({ success: true, data: booking });
-    // Тэмдэглэл: confirmed болоход мэйл автоматаар илгээхгүй.
-    // Баталгаажуулах мэйлийг admin гараар "Send confirmation email" товчоор илгээнэ
-    // (sendConfirmationEmail controller).
+
+    // confirmed болсон үед захиалагч руу баталгаажуулах мэйл автоматаар илгээнэ.
+    // Serverless дээр таслагдахгүйн тулд хариунаас ӨМНӨ await хийнэ. Мэйл алдаа
+    // гарсан ч статус шинэчлэгдэнэ — admin "Send confirmation email" товчоор дахин илгээж болно.
+    let emailSent: boolean | null = null;
+    if (status === 'confirmed' && !wasConfirmed && booking.email) {
+      try {
+        emailSent = await sendBookingConfirmation(booking);
+      } catch (err) {
+        console.error('[bookingController] Баталгаажуулах мэйл амжилтгүй:', err);
+        emailSent = false;
+      }
+    }
+
+    res.json({ success: true, data: booking, emailSent });
   } catch (err) {
     next(err);
   }
